@@ -207,20 +207,48 @@ document.addEventListener('DOMContentLoaded', () => {
     segmentDiv.classList.add('background-segment');
     segmentDiv.id = `segment-${sceneItem.id}`;
 
+    // const bgImg = new Image();
+    // bgImg.classList.add('bg-image');
+
+    // const isMobile = window.innerWidth <= 768;
+    // if (sceneItem.isViewportCover) {
+    //   bgImg.src = isMobile && sceneItem.srcMobile ? sceneItem.srcMobile : sceneItem.srcDesktop;
+    //   // *** MODIFICATION FOR PAGE1 MOBILE BOTTOM CROPPING ***
+    //   if (isMobile && sceneItem.id === 'page1') {
+    //     bgImg.style.objectPosition = 'center bottom';
+    //   } else {
+    //     bgImg.style.objectPosition = 'center center'; // Default for other cover images
+    //   }
+    // } else {
+    //   bgImg.src = sceneItem.src;
+    // }
     const bgImg = new Image();
     bgImg.classList.add('bg-image');
 
     const isMobile = window.innerWidth <= 768;
+
     if (sceneItem.isViewportCover) {
       bgImg.src = isMobile && sceneItem.srcMobile ? sceneItem.srcMobile : sceneItem.srcDesktop;
-      // *** MODIFICATION FOR PAGE1 MOBILE BOTTOM CROPPING ***
-      if (isMobile && sceneItem.id === 'page1') {
-        bgImg.style.objectPosition = 'center bottom';
+      
+      if (isMobile && sceneItem.id === 'page1-mobile') {
+        // *** Ensure 'cover' and align bottom for page1 mobile ***
+        bgImg.style.objectFit = 'cover';           // CRITICAL: Ensures it covers the area (no empty spaces)
+        bgImg.style.objectPosition = 'center bottom'; // Aligns bottom of image with bottom of container
       } else {
-        bgImg.style.objectPosition = 'center center'; // Default for other cover images
+        // Default for other scenes or desktop view of page1
+        bgImg.style.objectFit = 'cover';
+        bgImg.style.objectPosition = 'center center';
       }
+      // Ensure segmentDiv background color is cleared if it was set by a previous 'contain' attempt
+      segmentDiv.style.backgroundColor = ''; 
+
     } else {
+      // For non-cover scenes
       bgImg.src = sceneItem.src;
+      bgImg.style.objectFit = 'cover'; 
+      bgImg.style.objectPosition = 'center center';
+      // Ensure segmentDiv background color is cleared
+      segmentDiv.style.backgroundColor = '';
     }
 
     const segmentData = {
