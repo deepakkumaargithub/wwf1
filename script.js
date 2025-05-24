@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'assets/loading/loading-100.png'
   ];
   loadingSpinnerFrames.forEach(src => {
-      (new Image()).src = src;
+      (new Image()).src = src; // Preload loading images
   });
 
 
@@ -29,14 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
 
-  elements.loadingImageElement.src = loadingSpinnerFrames[0];
+  elements.loadingImageElement.src = loadingSpinnerFrames[0]; // Set initial loading image
 
 
   const sceneData = [{
           id: 'page1',
           srcDesktop: 'backgrounds/page1.png',
           srcMobile: 'backgrounds/page1-mobile.png',
-          isViewportCover: true, // Keep this, as it influences which image src is used
+          isViewportCover: true, // This page should cover the viewport
       },
       {
           id: 'room1',
@@ -119,10 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let totalImagesToLoad = 0;
 
+  // Count background images
   totalImagesToLoad += sceneData.length;
 
+  // Count walker frames
   totalImagesToLoad += allWalkerFrames.length;
 
+  // Count hotspot images
   sceneData.forEach(scene => {
       if (scene.hotspots) {
           totalImagesToLoad += scene.hotspots.length;
@@ -130,17 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   let loadedImages = 0;
-  const backgroundSegmentElements = [];
+  const backgroundSegmentElements = []; // Stores references to segment elements and their data
 
 
   function updateLoadingProgress() {
-      if (totalImagesToLoad === 0) {
+      if (totalImagesToLoad === 0) { // Handle case where there are no images to load
           finishLoading();
           return;
       }
       const percentage = Math.min(100, (loadedImages / totalImagesToLoad) * 100);
-      let frameIndex = Math.floor(percentage / 25);
-      if (percentage >= 99) frameIndex = loadingSpinnerFrames.length - 1;
+      let frameIndex = Math.floor(percentage / 25); // 0, 1, 2, 3, 4
+      if (percentage >= 99) frameIndex = loadingSpinnerFrames.length - 1; // Ensure 100% shows last frame
       elements.loadingImageElement.src = loadingSpinnerFrames[frameIndex];
 
       if (percentage >= 100) {
@@ -154,9 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
           elements.loadingScreen.style.opacity = '0';
           setTimeout(() => {
               elements.loadingScreen.style.display = 'none';
-              initializeSystem();
-          }, 500);
-      }, 200);
+              initializeSystem(); // Initialize the main system after loading screen fades
+          }, 500); // Wait for fade-out to complete
+      }, 200); // Small delay to ensure last frame is seen
   }
 
   function imageLoaded() {
@@ -166,11 +169,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function imageError(src) {
       console.error(`Failed to load image: ${src}`);
+      // Still count as loaded to prevent stuck loading screen
       loadedImages++;
       updateLoadingProgress();
   }
 
 
+  // Preload walker frames
   allWalkerFrames.forEach(src => {
       const img = new Image();
       img.onload = imageLoaded;
@@ -179,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
+  // Create background segments and load images
   sceneData.forEach((sceneItem) => {
       const segmentDiv = document.createElement('div');
       segmentDiv.classList.add('background-segment');
@@ -189,8 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const isMobile = window.innerWidth <= 768;
       if (sceneItem.isViewportCover) {
+          // Use specific mobile/desktop source for viewport cover images
           bgImg.src = isMobile && sceneItem.srcMobile ? sceneItem.srcMobile : sceneItem.srcDesktop;
-          // No need for a special class here, as object-fit:contain is global
+          segmentDiv.classList.add('viewport-cover'); // Add class for specific CSS styling
       } else {
           bgImg.src = sceneItem.src;
       }
@@ -201,9 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
           imageElement: bgImg,
           naturalWidth: 0,
           naturalHeight: 0,
-          currentWidth: 0,
+          currentWidth: 0, // This will be calculated later
           sceneDefinition: sceneItem,
-          isViewportCover: !!sceneItem.isViewportCover
+          isViewportCover: !!sceneItem.isViewportCover // Convert to boolean
       };
       backgroundSegmentElements.push(segmentData);
 
@@ -212,42 +219,44 @@ document.addEventListener('DOMContentLoaded', () => {
           segmentData.naturalHeight = bgImg.naturalHeight;
           imageLoaded();
 
-
+          // Append hotspots after image is loaded and dimensions are available
           if (sceneItem.hotspots) {
               sceneItem.hotspots.forEach(hotspotDef => {
+                  // Find the hotspot template
                   const hotspotTemplate = elements.hotspotTemplatesContainer.querySelector(`.hotspot[data-hotspot-id="${hotspotDef.id}"]`);
                   if (hotspotTemplate) {
-                      const hotspotInstance = hotspotTemplate.cloneNode(true);
+                      const hotspotInstance = hotspotTemplate.cloneNode(true); // Deep clone
 
+                      // Apply positioning based on hotspot definition
                       if (hotspotDef.leftDynamic) {
-
                           hotspotInstance.style.left = `calc(${hotspotDef.leftDynamic.basePercent}% + ${hotspotDef.leftDynamic.fixedOffsetPx}px)`;
                       } else {
-
                           hotspotInstance.style.left = `${hotspotDef.left}%`;
                       }
                       hotspotInstance.style.top = `${hotspotDef.top}%`;
                       segmentDiv.appendChild(hotspotInstance);
 
+                      // Special handling for the interactive bread hotspot
                       if (hotspotDef.id === 'bread') {
                           elements.breadHotspotElement = hotspotInstance;
                       }
 
+                      // Preload hotspot images
                       const hotspotImg = hotspotInstance.querySelector('img');
                       if (hotspotImg && hotspotImg.complete && hotspotImg.naturalWidth !== 0) {
-
+                          // If image is already complete (cached), count it
                           imageLoaded();
                       } else if (hotspotImg) {
-
+                          // Otherwise, wait for it to load
                           hotspotImg.onload = imageLoaded;
                           hotspotImg.onerror = () => imageError(hotspotImg.src);
                       } else {
-
+                          // If no img tag in hotspot, still count as loaded for progress
                           imageLoaded();
                       }
                   } else {
                       console.warn(`Hotspot template for ${hotspotDef.id} not found. Skipping.`);
-
+                      // Decrement totalImagesToLoad for this hotspot since it won't load
                       totalImagesToLoad = Math.max(0, totalImagesToLoad - 1);
                       updateLoadingProgress();
                   }
@@ -257,9 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
           segmentDiv.appendChild(bgImg);
           elements.backgroundContainer.appendChild(segmentDiv);
 
-
+          // After all background images have attempted to load, recalculate sizes
           const allBgImagesLoaded = backgroundSegmentElements.every(s => s.imageElement.complete);
           if (allBgImagesLoaded && loadedImages >= totalImagesToLoad) {
+              // Ensure handleResize is called only after loading is complete and if not already initialized
               if (!document.body.classList.contains('loading')) {
                   handleResize();
               }
@@ -267,7 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       bgImg.onerror = () => {
           imageError(bgImg.src);
-          segmentData.naturalWidth = 1; // Set dummy dimensions to prevent division by zero
+          // Set dummy dimensions to prevent division by zero in calculations if image fails
+          segmentData.naturalWidth = 1;
           segmentData.naturalHeight = 1;
 
           const allBgImagesAttempted = backgroundSegmentElements.every(s => s.imageElement.complete);
@@ -281,22 +292,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   const currentState = {
-      frame: 0,
-      position: 0,
-      targetPosition: 0,
-      previousPosition: 0,
-      currentPanel: 0,
-      totalPanels: 3,
+      frame: 0, // Current walker animation frame
+      position: 0, // Current background scroll position
+      targetPosition: 0, // Target scroll position for smooth animation
+      previousPosition: 0, // Used to determine walker direction
+      currentPanel: 0, // For modal navigation
+      totalPanels: 3, // Total number of modal panels
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
-      maxPosition: 0,
+      maxPosition: 0, // Maximum scrollable distance
       modalOpen: false,
       isMobile: window.innerWidth <= 768,
       animationEndOffset: (window.innerWidth <= 768) ? ANIMATION_END_OFFSET_MOBILE : ANIMATION_END_OFFSET_DESKTOP,
-      walkerVisible: false,
-      totalScrollWidth: 0,
-      isMoving: false,
-      touchStartY: 0 // Added for vertical touch
+      walkerVisible: false, // Flag to track walker visibility
+      totalScrollWidth: 0, // Total width of all background segments combined
+      isMoving: false, // Indicates if walker is actively moving
+      touchStartY: 0 // For vertical touch scrolling
   };
 
 
@@ -306,13 +317,17 @@ document.addEventListener('DOMContentLoaded', () => {
       currentState.viewportHeight = window.innerHeight;
 
       backgroundSegmentElements.forEach(segment => {
-          if (segment.naturalHeight > 0 && segment.naturalWidth > 0) {
-              // Calculate width based on viewport height to maintain aspect ratio
+          if (segment.isViewportCover) {
+              // For 'viewport-cover' segments (like page1), their width should always be the viewport width
+              segment.currentWidth = currentState.viewportWidth;
+          } else if (segment.naturalHeight > 0 && segment.naturalWidth > 0) {
+              // For 'contain' segments, calculate width based on viewport height to maintain aspect ratio
+              // This will lead to horizontal overflow if the image is wider than viewport aspect ratio
               segment.currentWidth = (segment.naturalWidth / segment.naturalHeight) * currentState.viewportHeight;
           } else {
               // Fallback if natural dimensions are not available (e.g., image failed to load)
-              segment.currentWidth = currentState.viewportWidth;
-              console.warn(`Segment ${segment.id} natural dimensions not available or zero, defaulting width.`);
+              segment.currentWidth = currentState.viewportWidth; // Default to viewport width
+              console.warn(`Segment ${segment.id} natural dimensions not available or zero, defaulting width to viewport width.`);
           }
           segment.element.style.width = `${segment.currentWidth}px`;
           // Ensure segment always takes full viewport height for consistent layout
@@ -320,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           currentState.totalScrollWidth += segment.currentWidth;
       });
+      // Set the total width of the background container
       elements.backgroundContainer.style.width = `${currentState.totalScrollWidth}px`;
   }
 
@@ -345,13 +361,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   function getWalkerAnimationStartPoint() {
-      // Calculate the point at which the walker should start appearing
-      // This is typically towards the end of the first background segment or a fixed percentage of the viewport
-      if (backgroundSegmentElements.length === 0 || !backgroundSegmentElements[0].currentWidth) {
-          return currentState.viewportWidth * 0.85; // Fallback if no segments loaded
+      // The walker should start appearing *after* the initial 'page1' segment,
+      // and a small distance into the second segment (room1).
+      if (backgroundSegmentElements.length < 2) {
+          // Fallback if there's only one segment or none
+          return currentState.viewportWidth * 0.85;
       }
 
-      return backgroundSegmentElements[0].currentWidth * 0.85; // 85% into the first segment
+      const firstSegment = backgroundSegmentElements[0];
+      const secondSegment = backgroundSegmentElements[1]; // Assuming room1 is the second segment
+
+      let startPoint = 0;
+      if (firstSegment.isViewportCover) {
+          // If the first segment is a viewport cover, the walker appears as soon as it's scrolled past.
+          // We add a small buffer into the second segment to make it smooth.
+          startPoint = firstSegment.currentWidth + (secondSegment.currentWidth * 0.15); // 15% into room1
+      } else {
+          // If the first segment is not a viewport cover, assume standard start point (e.g., 85% into first segment)
+          startPoint = firstSegment.currentWidth * 0.85;
+      }
+
+      return startPoint;
   }
 
 
@@ -368,12 +398,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
       // Smoothly interpolate the current position towards the target position
-      if (Math.abs(currentState.targetPosition - currentState.position) > 0.05) {
-          currentState.position += (currentState.targetPosition - currentState.position) * 0.12;
+      if (Math.abs(currentState.targetPosition - currentState.position) > 0.05) { // Check for significant difference
+          currentState.position += (currentState.targetPosition - currentState.position) * 0.12; // Easing effect
           enforceBoundaries(); // Re-enforce boundaries after interpolation
           currentState.isMoving = true;
       } else {
-          currentState.position = currentState.targetPosition;
+          currentState.position = currentState.targetPosition; // Snap to target if very close
           currentState.isMoving = false;
       }
 
@@ -392,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // Calculate actual movement since last frame to determine walking direction
           const actualMovementDelta = currentState.position - prevPositionBeforeUpdate;
 
-          if (currentState.isMoving && Math.abs(actualMovementDelta) > 2) {
+          if (currentState.isMoving && Math.abs(actualMovementDelta) > 2) { // Only animate if significant movement
               const frameSet = actualMovementDelta >= 0 ? walkingFrames : revWalkingFrames; // Forward or backward frames
               currentState.frame = (currentState.frame + 1) % frameSet.length; // Cycle through frames
               elements.walker.src = frameSet[currentState.frame];
@@ -417,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const oldPosition = currentState.position;
       let scrollProgress = 0;
 
-      // Calculate current scroll progress as a percentage
+      // Calculate current scroll progress as a percentage relative to the scrollable area
       if (oldTotalScrollWidth > currentState.viewportWidth) {
           scrollProgress = oldPosition / (oldTotalScrollWidth - currentState.viewportWidth);
       }
@@ -457,23 +487,24 @@ document.addEventListener('DOMContentLoaded', () => {
       currentState.position = 0;
       currentState.targetPosition = 0;
       currentState.previousPosition = 0;
-      enforceBoundaries();
+      enforceBoundaries(); // Ensure initial position is valid
 
       window.addEventListener('resize', handleResize);
 
 
+      // Add event listener for the bread hotspot
       if (elements.breadHotspotElement) {
           elements.breadHotspotElement.addEventListener('click', function(e) {
-              e.stopPropagation();
-              this.classList.toggle('zoomed');
-              showPanel(this.classList.contains('zoomed') ? 1 : 0);
+              e.stopPropagation(); // Prevent scroll events from bubbling
+              this.classList.toggle('zoomed'); // Toggle zoomed class on hotspot
+              showPanel(this.classList.contains('zoomed') ? 1 : 0); // Show panel 1 if zoomed, else close modal
           });
       } else {
           console.warn("Bread hotspot element was not found during initialization. Interactive modal will not work.");
       }
 
 
-      const scrollSensitivity = 1.5;
+      const scrollSensitivity = 1.5; // Adjust this value to make scrolling faster or slower
       window.addEventListener('wheel', e => {
           // Only respond to wheel events if modal is not open or if the event is not within the modal
           if (currentState.modalOpen && elements.modal.contains(e.target)) return;
@@ -490,21 +521,21 @@ document.addEventListener('DOMContentLoaded', () => {
           enforceBoundaries();
       }, {
           passive: false
-      });
+      }); // Use passive: false to allow preventDefault
 
 
       let touchStartY = 0; // For vertical swipe
-      let touchStartX = 0; // For horizontal swipe if needed, though not for walker here
+      // let touchStartX = 0; // For horizontal swipe if needed, though not for walker here
 
       window.addEventListener('touchstart', e => {
           if (currentState.modalOpen) return;
           // Capture Y-coordinate for vertical swipe
           touchStartY = e.touches[0].clientY;
           // Capture X-coordinate (can be used for modal interactions if needed)
-          touchStartX = e.touches[0].clientX;
+          // touchStartX = e.touches[0].clientX;
       }, {
           passive: true
-      });
+      }); // Use passive: true for better scroll performance initially
 
       window.addEventListener('touchmove', e => {
           // Only respond to touchmove if modal is not open or if the event is not within the modal
@@ -524,12 +555,12 @@ document.addEventListener('DOMContentLoaded', () => {
           // Negative deltaY (swipe up) means scrolling "up" the page, which should move walker backward
           // So we add deltaY to decrease targetPosition (move background right)
           // The sensitivity can be adjusted.
-          currentState.targetPosition -= deltaY * (currentState.isMobile ? 2.0 : 1.8);
+          currentState.targetPosition -= deltaY * (currentState.isMobile ? 2.0 : 1.8); // Adjust multiplier for sensitivity
           touchStartY = touchMoveY; // Update touchStartY for the next movement
           enforceBoundaries();
       }, {
           passive: false
-      });
+      }); // Use passive: false to allow preventDefault
 
 
       function showPanel(panelNumber) {
@@ -563,20 +594,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
 
+      // Modal navigation event listeners
       elements.modalNext.addEventListener('click', e => {
           e.preventDefault();
-          e.stopPropagation();
+          e.stopPropagation(); // Stop propagation to prevent body scroll
           if (currentState.currentPanel < currentState.totalPanels) showPanel(currentState.currentPanel + 1);
       });
       elements.modalPrev.addEventListener('click', e => {
           e.preventDefault();
-          e.stopPropagation();
+          e.stopPropagation(); // Stop propagation to prevent body scroll
           if (currentState.currentPanel > 1) showPanel(currentState.currentPanel - 1);
       });
       elements.modalClose.addEventListener('click', e => {
           e.preventDefault();
-          e.stopPropagation();
-          showPanel(0); // Close modal
+          e.stopPropagation(); // Stop propagation to prevent body scroll
+          showPanel(0); // Close modal by setting panelNumber to 0
       });
 
 
@@ -584,6 +616,6 @@ document.addEventListener('DOMContentLoaded', () => {
       requestAnimationFrame(updateWalkAndScroll);
   }
 
-
+  // Initial call to start loading process
   updateLoadingProgress();
 });

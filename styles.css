@@ -45,7 +45,7 @@ body.loading #hotspot-templates {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh; /* Background container takes full viewport height */
+  height: 100vh;
   display: flex;
   transform: translateX(0);
   will-change: transform;
@@ -53,16 +53,26 @@ body.loading #hotspot-templates {
 
 .background-segment {
   position: relative;
-  height: 100vh; /* Each segment takes full viewport height */
+  height: 100vh;
   flex-shrink: 0;
-  overflow: hidden; /* Ensure content outside is hidden */
+  overflow: hidden;
 }
 
-.background-segment img.bg-image {
+/* Style for viewport-covering image (e.g., page1) */
+.background-segment.viewport-cover img.bg-image {
   display: block;
-  width: 100%; /* Image always tries to fill its segment's width */
-  height: 100%; /* Image always tries to fill its segment's height */
-  object-fit: contain; /* CRITICAL: Ensures entire image is visible, maintaining aspect ratio */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* This makes the image cover the entire segment, potentially cropping */
+  pointer-events: none;
+}
+
+/* Default style for other background images (e.g., room backgrounds) */
+.background-segment:not(.viewport-cover) img.bg-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* This ensures the entire image is visible, maintaining aspect ratio */
   pointer-events: none;
 }
 
@@ -234,7 +244,7 @@ body.loading #hotspot-templates {
 
 @media (max-width: 480px) {
   #walker {
-      left: -85vw;
+      left: -40vw;
       height: 70vh;
   }
 }
