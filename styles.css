@@ -244,7 +244,7 @@ body.loading #hotspot-templates {
 
 @media (max-width: 480px) {
   #walker {
-      left: -40vw;
+      left: -85vw;
       height: 70vh;
   }
 }
