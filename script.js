@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: 'page1',
           srcDesktop: 'backgrounds/page1.png',
           srcMobile: 'backgrounds/page1-mobile.png',
-          isViewportCover: true,
+          isViewportCover: true, // Keep this, as it influences which image src is used
       },
       {
           id: 'room1',
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isMobile = window.innerWidth <= 768;
       if (sceneItem.isViewportCover) {
           bgImg.src = isMobile && sceneItem.srcMobile ? sceneItem.srcMobile : sceneItem.srcDesktop;
-          segmentDiv.classList.add('viewport-cover'); // Add class for styling
+          // No need for a special class here, as object-fit:contain is global
       } else {
           bgImg.src = sceneItem.src;
       }
@@ -258,19 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
           elements.backgroundContainer.appendChild(segmentDiv);
 
 
-
           const allBgImagesLoaded = backgroundSegmentElements.every(s => s.imageElement.complete);
           if (allBgImagesLoaded && loadedImages >= totalImagesToLoad) {
-
               if (!document.body.classList.contains('loading')) {
-
                   handleResize();
               }
           }
       };
       bgImg.onerror = () => {
           imageError(bgImg.src);
-          segmentData.naturalWidth = 1;
+          segmentData.naturalWidth = 1; // Set dummy dimensions to prevent division by zero
           segmentData.naturalHeight = 1;
 
           const allBgImagesAttempted = backgroundSegmentElements.every(s => s.imageElement.complete);
@@ -303,40 +300,24 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
 
-
   function calculateSegmentWidthsAndTotal() {
       currentState.totalScrollWidth = 0;
       currentState.viewportWidth = window.innerWidth;
       currentState.viewportHeight = window.innerHeight;
 
       backgroundSegmentElements.forEach(segment => {
-          if (segment.isViewportCover) {
-              // For viewport cover images, ensure it covers the viewport width and adjust height based on aspect ratio
-              // This prevents cutting off the bottom if the image has a different aspect ratio than the viewport
-              const imgAspect = segment.naturalWidth / segment.naturalHeight;
-              const viewportAspect = currentState.viewportWidth / currentState.viewportHeight;
-
-              if (imgAspect > viewportAspect) {
-                  // Image is wider than viewport, fit height and calculate width
-                  segment.currentWidth = imgAspect * currentState.viewportHeight;
-                  segment.element.style.height = `${currentState.viewportHeight}px`; // Explicitly set height
-              } else {
-                  // Image is taller than viewport, fit width and calculate height
-                  segment.currentWidth = currentState.viewportWidth;
-                  segment.element.style.height = `${currentState.viewportWidth / imgAspect}px`; // Calculate height to maintain aspect ratio
-              }
-              segment.element.style.width = `${segment.currentWidth}px`;
+          if (segment.naturalHeight > 0 && segment.naturalWidth > 0) {
+              // Calculate width based on viewport height to maintain aspect ratio
+              segment.currentWidth = (segment.naturalWidth / segment.naturalHeight) * currentState.viewportHeight;
           } else {
-              // For non-viewport-cover images, scale based on viewport height to maintain proportion
-              if (segment.naturalHeight > 0 && segment.naturalWidth > 0) {
-                  segment.currentWidth = (segment.naturalWidth / segment.naturalHeight) * currentState.viewportHeight;
-              } else {
-                  segment.currentWidth = currentState.viewportWidth;
-                  console.warn(`Segment ${segment.id} natural dimensions not available, defaulting width.`);
-              }
-              segment.element.style.width = `${segment.currentWidth}px`;
-              segment.element.style.height = `${currentState.viewportHeight}px`; // Ensure consistent height
+              // Fallback if natural dimensions are not available (e.g., image failed to load)
+              segment.currentWidth = currentState.viewportWidth;
+              console.warn(`Segment ${segment.id} natural dimensions not available or zero, defaulting width.`);
           }
+          segment.element.style.width = `${segment.currentWidth}px`;
+          // Ensure segment always takes full viewport height for consistent layout
+          segment.element.style.height = `${currentState.viewportHeight}px`;
+
           currentState.totalScrollWidth += segment.currentWidth;
       });
       elements.backgroundContainer.style.width = `${currentState.totalScrollWidth}px`;
@@ -344,8 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   function calculateMaxPosition() {
+      // The maximum scrollable distance for the background
       const actualMaxScroll = currentState.totalScrollWidth - currentState.viewportWidth;
 
+      // Ensure maxPosition is not negative and accounts for the animation end offset
       currentState.maxPosition = Math.max(0, actualMaxScroll - currentState.animationEndOffset);
   }
 
@@ -354,21 +337,26 @@ document.addEventListener('DOMContentLoaded', () => {
       currentState.isMobile = window.innerWidth <= 768;
       currentState.animationEndOffset = currentState.isMobile ? ANIMATION_END_OFFSET_MOBILE : ANIMATION_END_OFFSET_DESKTOP;
 
+      // Set the bottom property based on device type
       elements.walker.style.bottom = currentState.isMobile ? '0%' : '-5%';
+      // Ensure no initial vertical transform from previous states
       elements.walker.style.transform = 'translateY(0%)';
   }
 
 
   function getWalkerAnimationStartPoint() {
+      // Calculate the point at which the walker should start appearing
+      // This is typically towards the end of the first background segment or a fixed percentage of the viewport
       if (backgroundSegmentElements.length === 0 || !backgroundSegmentElements[0].currentWidth) {
-          return currentState.viewportWidth * 0.85;
+          return currentState.viewportWidth * 0.85; // Fallback if no segments loaded
       }
 
-      return backgroundSegmentElements[0].currentWidth * 0.85;
+      return backgroundSegmentElements[0].currentWidth * 0.85; // 85% into the first segment
   }
 
 
   function enforceBoundaries() {
+      // Prevent scrolling beyond the start (0) or end (maxPosition) of the content
       currentState.targetPosition = Math.max(0, Math.min(currentState.targetPosition, currentState.maxPosition));
       currentState.position = Math.max(0, Math.min(currentState.position, currentState.maxPosition));
   }
@@ -379,9 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const prevPositionBeforeUpdate = currentState.position;
 
 
+      // Smoothly interpolate the current position towards the target position
       if (Math.abs(currentState.targetPosition - currentState.position) > 0.05) {
           currentState.position += (currentState.targetPosition - currentState.position) * 0.12;
-          enforceBoundaries();
+          enforceBoundaries(); // Re-enforce boundaries after interpolation
           currentState.isMoving = true;
       } else {
           currentState.position = currentState.targetPosition;
@@ -389,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
 
+      // Determine if the walker should be visible based on current scroll position
       const animationStartPoint = getWalkerAnimationStartPoint();
       const shouldShowWalker = currentState.position >= animationStartPoint && !currentState.modalOpen;
 
@@ -399,21 +389,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
       if (shouldShowWalker) {
+          // Calculate actual movement since last frame to determine walking direction
           const actualMovementDelta = currentState.position - prevPositionBeforeUpdate;
 
           if (currentState.isMoving && Math.abs(actualMovementDelta) > 2) {
-              const frameSet = actualMovementDelta >= 0 ? walkingFrames : revWalkingFrames;
-              currentState.frame = (currentState.frame + 1) % frameSet.length;
+              const frameSet = actualMovementDelta >= 0 ? walkingFrames : revWalkingFrames; // Forward or backward frames
+              currentState.frame = (currentState.frame + 1) % frameSet.length; // Cycle through frames
               elements.walker.src = frameSet[currentState.frame];
-              currentState.previousPosition = currentState.position;
+              currentState.previousPosition = currentState.position; // Update previous position
           }
       }
 
 
+      // Apply the background scroll transformation
       elements.backgroundContainer.style.transform = `translateX(-${currentState.position}px)`;
 
 
-
+      // Request the next animation frame for smooth updates
       requestAnimationFrame(updateWalkAndScroll);
   }
 
@@ -425,29 +417,33 @@ document.addEventListener('DOMContentLoaded', () => {
       const oldPosition = currentState.position;
       let scrollProgress = 0;
 
+      // Calculate current scroll progress as a percentage
       if (oldTotalScrollWidth > currentState.viewportWidth) {
           scrollProgress = oldPosition / (oldTotalScrollWidth - currentState.viewportWidth);
       }
 
-      applyWalkerStyles();
-      calculateSegmentWidthsAndTotal();
-      calculateMaxPosition();
+      applyWalkerStyles(); // Re-apply walker styles based on new viewport
+      calculateSegmentWidthsAndTotal(); // Re-calculate all segment widths and total scroll width
+      calculateMaxPosition(); // Re-calculate maximum scroll position
 
       let newTargetPosition = 0;
       if (currentState.totalScrollWidth > currentState.viewportWidth) {
+          // Set new target position proportionally to the old scroll progress
           newTargetPosition = scrollProgress * (currentState.totalScrollWidth - currentState.viewportWidth);
       }
 
       currentState.targetPosition = newTargetPosition;
       currentState.position = newTargetPosition;
-      enforceBoundaries();
+      enforceBoundaries(); // Ensure new position is within boundaries
 
+      // Immediately update walker visibility based on the new position after resize
       const animationStartPoint = getWalkerAnimationStartPoint();
       const shouldShowWalker = currentState.position >= animationStartPoint && !currentState.modalOpen;
       elements.walker.style.opacity = shouldShowWalker ? '1' : '0';
       currentState.walkerVisible = shouldShowWalker;
 
 
+      // Apply the updated background transformation immediately
       elements.backgroundContainer.style.transform = `translateX(-${currentState.position}px)`;
   }
 
@@ -457,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
       calculateSegmentWidthsAndTotal();
       calculateMaxPosition();
 
-
+      // Initialize positions to 0 on load
       currentState.position = 0;
       currentState.targetPosition = 0;
       currentState.previousPosition = 0;
@@ -479,14 +475,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const scrollSensitivity = 1.5;
       window.addEventListener('wheel', e => {
-
+          // Only respond to wheel events if modal is not open or if the event is not within the modal
           if (currentState.modalOpen && elements.modal.contains(e.target)) return;
           if (currentState.modalOpen) {
-              e.preventDefault();
+              e.preventDefault(); // Prevent page scroll if modal is open
               return;
           }
-          e.preventDefault();
-          // Changed e.deltaY to control horizontal scroll
+          e.preventDefault(); // Prevent default vertical scrolling of the page
+
+          // Use e.deltaY for horizontal movement
+          // Scrolling down (positive deltaY) moves background left (walker forward)
+          // Scrolling up (negative deltaY) moves background right (walker backward)
           currentState.targetPosition += e.deltaY * scrollSensitivity;
           enforceBoundaries();
       }, {
@@ -494,31 +493,38 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
 
-      let touchStartY = 0; // Changed to touchStartY for vertical swipe
-      let touchStartX = 0; // Keep touchStartX for potential horizontal movement if needed, though not directly used for walker movement here
+      let touchStartY = 0; // For vertical swipe
+      let touchStartX = 0; // For horizontal swipe if needed, though not for walker here
 
       window.addEventListener('touchstart', e => {
           if (currentState.modalOpen) return;
-          touchStartY = e.touches[0].clientY; // Capture Y-coordinate for vertical swipe
-          touchStartX = e.touches[0].clientX; // Capture X-coordinate (might be useful for other interactions)
+          // Capture Y-coordinate for vertical swipe
+          touchStartY = e.touches[0].clientY;
+          // Capture X-coordinate (can be used for modal interactions if needed)
+          touchStartX = e.touches[0].clientX;
       }, {
           passive: true
       });
 
       window.addEventListener('touchmove', e => {
+          // Only respond to touchmove if modal is not open or if the event is not within the modal
           if (currentState.modalOpen && elements.modal.contains(e.target)) return;
           if (currentState.modalOpen) {
-              e.preventDefault();
+              e.preventDefault(); // Prevent page scroll if modal is open
               return;
           }
-          e.preventDefault();
+          e.preventDefault(); // Prevent default vertical scrolling of the page
+
           const touchMoveY = e.touches[0].clientY; // Get current Y-coordinate
           const deltaY = touchMoveY - touchStartY; // Calculate vertical delta
 
           // Adjust targetPosition based on vertical swipe
-          // Positive deltaY (swipe down) moves forward (increases targetPosition)
-          // Negative deltaY (swipe up) moves backward (decreases targetPosition)
-          currentState.targetPosition -= deltaY * (currentState.isMobile ? 2.0 : 1.8); // Adjusted sensitivity
+          // Positive deltaY (swipe down) means scrolling "down" the page, which should move walker forward
+          // So we subtract deltaY to increase targetPosition (move background left)
+          // Negative deltaY (swipe up) means scrolling "up" the page, which should move walker backward
+          // So we add deltaY to decrease targetPosition (move background right)
+          // The sensitivity can be adjusted.
+          currentState.targetPosition -= deltaY * (currentState.isMobile ? 2.0 : 1.8);
           touchStartY = touchMoveY; // Update touchStartY for the next movement
           enforceBoundaries();
       }, {
@@ -534,20 +540,24 @@ document.addEventListener('DOMContentLoaded', () => {
               elements.modal.classList.add('visible');
               currentState.modalOpen = true;
 
+              // Hide walker when modal is open
               if (currentState.walkerVisible) elements.walker.style.opacity = '0';
           } else {
               elements.modal.classList.remove('visible');
               currentState.modalOpen = false;
 
+              // Restore walker visibility if it should be visible based on position
               const animationStartPoint = getWalkerAnimationStartPoint();
               const shouldShowWalker = currentState.position >= animationStartPoint;
               if (shouldShowWalker) elements.walker.style.opacity = '1';
 
+              // Ensure bread hotspot is unzoomed if modal is closed
               if (elements.breadHotspotElement && elements.breadHotspotElement.classList.contains('zoomed')) {
                   elements.breadHotspotElement.classList.remove('zoomed');
               }
           }
 
+          // Control visibility of navigation buttons
           elements.modalPrev.style.display = panelNumber > 1 ? 'block' : 'none';
           elements.modalNext.style.display = panelNumber < currentState.totalPanels && panelNumber > 0 ? 'block' : 'none';
       }
@@ -566,10 +576,11 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.modalClose.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();
-          showPanel(0);
+          showPanel(0); // Close modal
       });
 
 
+      // Start the animation loop
       requestAnimationFrame(updateWalkAndScroll);
   }
 
