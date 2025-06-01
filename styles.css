@@ -4,17 +4,37 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+body,
+html {
   height: 100%;
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
+body.loading .hotspot,
+body.loading #walker,
+body.loading #modal {
+  display: none;
+}
+
+body.loading {
   overflow: hidden;
 }
 
-body.loading #background,
 body.loading #walker,
+body.loading #callouts-container,
 body.loading #modal,
-body.loading #hotspot-templates {
-  display: none;
+body.loading .hotspot {
+  opacity: 0;
+  visibility: hidden;
+
+  transition: opacity 0.5s ease, visibility 0s 0.5s;
+}
+
+body.loading #background,
+body.loading .first-background {
+  opacity: 1;
+  visibility: visible;
 }
 
 #loading-screen {
@@ -32,78 +52,57 @@ body.loading #hotspot-templates {
 }
 
 #loading-image {
-  position: absolute;
   max-width: 25vw;
   width: auto;
   height: auto;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 #background {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
+  height: 100%;
   display: flex;
   transform: translateX(0);
-  will-change: transform;
+  z-index: 1;
+  width: auto;
 }
 
-.background-segment {
-  position: relative;
-  height: 100vh;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-/* Style for viewport-covering image (e.g., page1) */
-.background-segment.viewport-cover img.bg-image {
-  display: block;
-  width: 100%;
+#background img {
   height: 100%;
-  object-fit: cover; /* This makes the image cover the entire segment, potentially cropping */
+  object-fit: cover;
+  display: block;
   pointer-events: none;
 }
 
-/* Default style for other background images (e.g., room backgrounds) */
-.background-segment:not(.viewport-cover) img.bg-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* This ensures the entire image is visible, maintaining aspect ratio */
-  pointer-events: none;
+.first-background {
+  width: 100vw !important;
+  object-fit: cover !important;
 }
 
 #walker {
   position: fixed;
-  left: 0vw;
-  height: 80vh;
-  width: auto;
-  z-index: 10;
+  bottom: -2vh;
+  /* REMOVED left: 5vw; */
+  height: auto;
+  z-index: 30;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.5s ease;
-  will-change: opacity, transform;
-  bottom: -5%;
-  transform: translateY(0);
+  width: 1200px; /* Base width */
 }
+
 
 .hotspot {
   position: absolute;
-  width: 50vw;
-  height: 50vw;
-  max-width: 150px;
-  max-height: 150px;
+  width: clamp(170px, 12vw, 200px);
+  height: clamp(170px, 12vw, 200px);
   cursor: pointer;
   z-index: 20;
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  transform-origin: center;
+  pointer-events: auto;
 }
 
 .hotspot img {
@@ -111,16 +110,108 @@ body.loading #hotspot-templates {
   height: 100%;
   object-fit: contain;
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .hotspot.active {
-  animation: pulse 3s infinite;
+  animation: pulse 2s infinite;
 }
 
 .hotspot.zoomed {
+  transform: scale(1.8);
   z-index: 1002;
   animation: none;
-  box-shadow: none;
+}
+
+
+@media (max-width: 768px) {
+  .hotspot {
+    width: clamp(150px, 20vw, 200px);
+    height: clamp(150px, 20vw, 200px);
+  }
+
+  .hotspot img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .hotspot.active {
+    transform: scale(1.1);
+  }
+
+  .hotspot.zoomed {
+    transform: scale(1.6);
+  }
+}
+
+
+@media (max-width: 480px) {
+  .hotspot {
+    width: clamp(150px, 25vw, 200px);
+    height: clamp(150px, 25vw, 200px);
+  }
+}
+
+#callouts-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 25;
+  width: auto;
+}
+
+.hotspot-dust {
+  top: 50%;
+  left: 23%;
+}
+.hotspot-web {
+  top: 17%;
+  left: 30.5%;
+}
+.hotspot-fish {
+  top: 18%;
+  left: 45%;
+}
+.hotspot-bread {
+  top: 18%;
+  left: 41.5%;
+}
+.hotspot-carrot {
+  top: 18%;
+  left: 55%;
+}
+.hotspot-bee {
+  top: 25%;
+  left: 71%;
+}
+.hotspot-leaf {
+  top: 33%;
+  left: 73.5%;
+}
+.hotspot-lizard {
+  top: 7%;
+  left: 91.5%;
+}
+.hotspot-egg {
+  top: 18%;
+  left: 57%;
+}
+.hotspot-hair {
+  top: 25%;
+  left: 87.5%;
+}
+.hotspot-wood {
+  top: 25%;
+  left: 83%;
+}
+.hotspot-cube {
+  top: 33%;
+  left: 76%;
+}
+.hotspot-cockroach {
+  top: 55%;
+  left: 62%;
 }
 
 #modal {
@@ -128,30 +219,43 @@ body.loading #hotspot-templates {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1001;
+  z-index: 999;
   display: none;
-  width: 90vw;
-  height: 90vh;
-  max-width: 1000px;
-  max-height: 600px;
-  background: rgba(0, 0, 0, 0);
+  width: 80%;
+  max-width: 900px;
+  height: auto;
+  max-height: 90vh;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 #modal.visible {
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #modal-content {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 90vh;
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 #modal-image {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 70vh;
   object-fit: contain;
-  pointer-events: none;
+  margin: 0 auto;
 }
 
 .modal-btn {
@@ -159,106 +263,160 @@ body.loading #hotspot-templates {
   cursor: pointer;
   z-index: 1003;
   pointer-events: all;
-  border: none;
   background: none;
+  border: none;
   outline: none;
+  padding: 10px;
 }
 
 #modal-close {
-  width: 5vw;
-  max-width: 40px;
-  top: 5vh;
-  right: 5vw;
+  width: 60px;
+  top: 70px;
+  right: 75px;
 }
 
 #modal-prev {
-  width: 30vw;
-  max-width: 350px;
-  bottom: 5vh;
-  left: 0vw;
+  width: 350px;
+  bottom: 8px;
+  left: -40px;
 }
 
 #modal-next {
-  width: 30vw;
-  max-width: 350px;
-  bottom: 5vh;
-  right: 0vw;
-}
-
-@media (max-width: 768px) {
-  #loading-image {
-      max-width: 50vw;
-  }
-
-  #walker {
-      left: -15vw;
-      height: 70vh;
-      bottom: 0%;
-  }
-
-  .hotspot {
-      width: 70vw;
-      height: 70vw;
-      max-width: 150px;
-      max-height: 150px;
-  }
-
-  #modal {
-      width: 95vw;
-      height: auto;
-      max-height: 90vh;
-  }
-
-  #modal-close {
-      width: 8vw;
-      max-width: 35px;
-      top: 2vh;
-      right: 2vw;
-  }
-
-  #modal-prev {
-      width: 25vw;
-      max-width: 120px;
-      bottom: 2vh;
-      left: 2vw;
-  }
-
-  #modal-next {
-      width: 25vw;
-      max-width: 120px;
-      bottom: 2vh;
-      right: 2vw;
-  }
-
-  .hotspot.active {
-      animation: pulse 2.5s infinite;
-  }
-}
-
-@media (max-width: 576px) {
-  #walker {
-      left: -30vw;
-      height: 70vh;
-  }
-}
-
-@media (max-width: 480px) {
-  #walker {
-      left: -90vw;
-      height: 70vh;
-  }
+width: 350px;
+bottom: 8px;
+right: -70px;
 }
 
 @keyframes pulse {
   0% {
-      transform: translate(-50%, -50%) scale(1);
+    transform: scale(0.95);
   }
 
   50% {
-      transform: translate(-50%, -50%) scale(1.2);
+    transform: scale(1.1);
   }
 
   100% {
-      transform: translate(-50%, -50%) scale(1);
+    transform: scale(0.95);
+  }
+}
+
+
+@media (max-width: 600px) {
+  #modal-prev,
+  #modal-next {
+    width: 60px;
+  }
+}
+
+/* Walker media queries: Only width and bottom are now primary concerns here for CSS. Left is handled by JS. */
+@media (min-width: 769px) { /* Desktop */
+  #walker {
+    width: 900px;
+    bottom: -4vh;
+    /* REMOVED left: -10vw; */
+  }
+}
+
+
+@media (max-width: 768px) { /* Tablet */
+  #walker {
+    width: 900px;
+    bottom: -3vh;
+    /* REMOVED left: -30vw; */
+  }
+  #modal {
+    width: 90% !important;
+    height: auto;
+    max-height: 80vh;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  #modal-close {
+    width: 50px;
+    top: 48px;
+    right: 55px;
+  }
+  #modal-prev {
+    width: 270px;
+    bottom: 1px;
+    left: -34px;
+  }
+  #modal-next {
+    width: 270px;
+    bottom: 1px;
+    right: -54px;
+  }
+}
+
+@media (max-width: 480px) { /* Mobile */
+  #walker {
+    width: 800px;
+    bottom: -2vh;
+    /* REMOVED left: -40vw; */
+  }
+    #loading-image {
+    max-width: 50vw;
+  }
+  #modal {
+    width: 90% !important;
+    height: auto;
+    max-height: 80vh;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  #modal-close {
+    width: 50px;
+    top: 58px;
+    right: 55px;
+  }
+  #modal-prev {
+    width: 270px;
+    bottom: 1px;
+    left: -34px;
+  }
+  #modal-next {
+    width: 270px;
+    bottom: 1px;
+    right: -54px;
+  }
+}
+
+
+.background-link {
+  position: absolute;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.background-link a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+@media (min-width: 769px) {
+  .background-link {
+
+    top: 91%;
+    left: 47%;
+    width: 120px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .background-link {
+
+    top: 91%;
+    left: 44%;
+    width: 150px;
+    height: 50px;
   }
 }
