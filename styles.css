@@ -3,40 +3,33 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 body,
 html {
   height: 100%;
   overflow: hidden;
   overflow-x: hidden;
 }
-
 body.loading .hotspot,
 body.loading #walker,
 body.loading #modal {
   display: none;
 }
-
 body.loading {
   overflow: hidden;
 }
-
 body.loading #walker,
 body.loading #callouts-container,
 body.loading #modal,
 body.loading .hotspot {
   opacity: 0;
   visibility: hidden;
-
   transition: opacity 0.5s ease, visibility 0s 0.5s;
 }
-
 body.loading #background,
 body.loading .first-background {
   opacity: 1;
   visibility: visible;
 }
-
 #loading-screen {
   position: fixed;
   top: 0;
@@ -50,13 +43,11 @@ body.loading .first-background {
   align-items: center;
   transition: opacity 0.5s ease;
 }
-
 #loading-image {
   max-width: 25vw;
   width: auto;
   height: auto;
 }
-
 #background {
   position: fixed;
   top: 0;
@@ -67,32 +58,32 @@ body.loading .first-background {
   z-index: 1;
   width: auto;
 }
-
 #background img {
   height: 100%;
   object-fit: cover;
   display: block;
   pointer-events: none;
 }
-
 .first-background {
   width: 100vw !important;
   object-fit: cover !important;
 }
-
 #walker {
   position: fixed;
   bottom: -2vh;
-  /* REMOVED left: 5vw; */
   height: auto;
   z-index: 30;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.5s ease;
-  width: 1200px; /* Base width */
+  width: 1200px;
+  
+  /* --- FIX START --- */
+  /* This robustly centers the element on all screen sizes */
+  left: 50%;
+  transform: translateX(-50%);
+  /* --- FIX END --- */
 }
-
-
 .hotspot {
   position: absolute;
   width: clamp(170px, 12vw, 200px);
@@ -104,7 +95,6 @@ body.loading .first-background {
   transform-origin: center;
   pointer-events: auto;
 }
-
 .hotspot img {
   width: 100%;
   height: 100%;
@@ -112,46 +102,36 @@ body.loading .first-background {
   border-radius: 50%;
   pointer-events: none;
 }
-
 .hotspot.active {
   animation: pulse 2s infinite;
 }
-
 .hotspot.zoomed {
   transform: scale(1.8);
   z-index: 1002;
   animation: none;
 }
-
-
 @media (max-width: 768px) {
   .hotspot {
-    width: clamp(150px, 20vw, 200px);
-    height: clamp(150px, 20vw, 200px);
+      width: clamp(150px, 20vw, 200px);
+      height: clamp(150px, 20vw, 200px);
   }
-
   .hotspot img {
-    width: 100%;
-    height: 100%;
+      width: 100%;
+      height: 100%;
   }
-
   .hotspot.active {
-    transform: scale(1.1);
+      transform: scale(1.1);
   }
-
   .hotspot.zoomed {
-    transform: scale(1.6);
+      transform: scale(1.6);
   }
 }
-
-
 @media (max-width: 480px) {
   .hotspot {
-    width: clamp(150px, 25vw, 200px);
-    height: clamp(150px, 25vw, 200px);
+      width: clamp(150px, 25vw, 200px);
+      height: clamp(150px, 25vw, 200px);
   }
 }
-
 #callouts-container {
   position: fixed;
   top: 0;
@@ -160,7 +140,6 @@ body.loading .first-background {
   z-index: 25;
   width: auto;
 }
-
 .hotspot-dust {
   top: 50%;
   left: 23%;
@@ -213,7 +192,6 @@ body.loading .first-background {
   top: 55%;
   left: 62%;
 }
-
 #modal {
   position: fixed;
   top: 50%;
@@ -221,25 +199,23 @@ body.loading .first-background {
   transform: translate(-50%, -50%);
   z-index: 999;
   display: none;
-  width: 80%;
-  max-width: 900px;
+  width: 100%;
+  max-width: 1400px;
   height: auto;
-  max-height: 90vh;
+  max-height: 95vh;
   border-radius: 8px;
   overflow: hidden;
 }
-
 #modal.visible {
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
 #modal-content {
   position: relative;
   width: 100%;
   height: auto;
-  max-height: 90vh;
+  max-height: 95vh;
   padding: 20px;
   border-radius: 8px;
   display: flex;
@@ -247,17 +223,19 @@ body.loading .first-background {
   align-items: center;
   justify-content: center;
 }
-
+.image-container {
+  position: relative;
+  display: inline-block;
+}
 #modal-image {
   display: block;
   width: auto;
   max-width: 100%;
   height: auto;
-  max-height: 70vh;
+  max-height: 99vh;
   object-fit: contain;
   margin: 0 auto;
 }
-
 .modal-btn {
   position: absolute;
   cursor: pointer;
@@ -268,129 +246,129 @@ body.loading .first-background {
   outline: none;
   padding: 10px;
 }
-
 #modal-close {
-  width: 60px;
-  top: 70px;
-  right: 75px;
+  top: 10%;
+  right: 6%;
+  width: 6%;
 }
-
 #modal-prev {
-  width: 350px;
-  bottom: 8px;
-  left: -40px;
+  bottom: -1%;
+  left: -5%;
+  width: 35%;
 }
-
 #modal-next {
-width: 350px;
-bottom: 8px;
-right: -70px;
+  bottom: -1%;
+  right: -8%;
+  width: 35%;
 }
-
+/* Tablet/Medium screen adjustments */
+@media (max-width: 900px) and (min-width: 769px) {
+  #modal-close {
+      width: 8%;
+      top: 10%;
+      right: 6%;
+  }
+  #modal-prev {
+      width: 40%;
+      bottom: -3%;
+      left: -6.5%;
+  }
+  #modal-next {
+      width: 40%;
+      bottom: -3%;
+      right: -10%;
+  }
+}
 @keyframes pulse {
   0% {
-    transform: scale(0.95);
+      transform: scale(0.95);
   }
-
   50% {
-    transform: scale(1.1);
+      transform: scale(1.1);
   }
-
   100% {
-    transform: scale(0.95);
+      transform: scale(0.95);
   }
 }
-
-
 @media (max-width: 600px) {
   #modal-prev,
   #modal-next {
-    width: 60px;
+      width: 60px;
   }
 }
-
-/* Walker media queries: Only width and bottom are now primary concerns here for CSS. Left is handled by JS. */
-@media (min-width: 769px) { /* Desktop */
+@media (min-width: 769px) {
   #walker {
-    width: 900px;
-    bottom: -4vh;
-    /* REMOVED left: -10vw; */
+      width: 1100px;
+      bottom: -4vh;
+
   }
 }
-
-
-@media (max-width: 768px) { /* Tablet */
+@media (max-width: 768px) {
   #walker {
-    width: 900px;
-    bottom: -3vh;
-    /* REMOVED left: -30vw; */
+      width: 1100px;
+      bottom: -3vh;
   }
   #modal {
-    width: 90% !important;
-    height: auto;
-    max-height: 80vh;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+      width: 90% !important;
+      height: auto;
+      max-height: 80vh;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
   }
   #modal-close {
-    width: 50px;
-    top: 48px;
-    right: 55px;
+      width: 9%;
+      top: 10%;
+      right: 6%;
   }
   #modal-prev {
-    width: 270px;
-    bottom: 1px;
-    left: -34px;
+      width: 48%;
+      bottom: -6%;
+      left: -9%;
   }
   #modal-next {
-    width: 270px;
-    bottom: 1px;
-    right: -54px;
+      width: 48%;
+      bottom: -6%;
+      right: -13%;
   }
 }
-
-@media (max-width: 480px) { /* Mobile */
+@media (max-width: 480px) {
   #walker {
-    width: 800px;
-    bottom: -2vh;
-    /* REMOVED left: -40vw; */
+      width: 1100px;
+      bottom: -2vh;
   }
-    #loading-image {
-    max-width: 50vw;
+  #loading-image {
+      max-width: 50vw;
   }
   #modal {
-    width: 90% !important;
-    height: auto;
-    max-height: 80vh;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+      width: 90% !important;
+      height: auto;
+      max-height: 90vh;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
   }
   #modal-close {
-    width: 50px;
-    top: 58px;
-    right: 55px;
+      width: 14%;
+      top: 7%;
+      right: 10%;
   }
   #modal-prev {
-    width: 270px;
-    bottom: 1px;
-    left: -34px;
+      width: 84%;
+      bottom: -3%;
+      left: -17%;
   }
   #modal-next {
-    width: 270px;
-    bottom: 1px;
-    right: -54px;
+      width: 84%;
+      bottom: -3%;
+      right: -24%;
   }
 }
-
-
 .background-link {
   position: absolute;
   z-index: 30;
   pointer-events: auto;
 }
-
 .background-link a {
   display: block;
   width: 100%;
@@ -400,23 +378,19 @@ right: -70px;
   -webkit-touch-callout: none;
   user-select: none;
 }
-
 @media (min-width: 769px) {
   .background-link {
-
-    top: 91%;
-    left: 47%;
-    width: 120px;
-    height: 30px;
+      top: 91%;
+      left: 47%;
+      width: 120px;
+      height: 30px;
   }
 }
-
 @media (max-width: 768px) {
   .background-link {
-
-    top: 91%;
-    left: 44%;
-    width: 150px;
-    height: 50px;
+      top: 91%;
+      left: 44%;
+      width: 150px;
+      height: 50px;
   }
 }
